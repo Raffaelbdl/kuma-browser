@@ -8,7 +8,7 @@
 
 Kuma Browser enables a few functionalities from the [jpdb.io](jpdb.io) search engine directly within Anki.
 
-> [!IMPORTANT]
+> [!CAUTION]
 > Kuma Browser is not an official JPDB addon. It simply aims to faciliate the creation of Anki cards, but does not want to replace JPDB. 
 > 
 > People from JPDB if you see this, please make an offline app for your website <3
