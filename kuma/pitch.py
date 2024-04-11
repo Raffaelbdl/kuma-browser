@@ -1,5 +1,4 @@
-from dataclasses import dataclass
-import os
+"""Pitch related functions."""
 
 # region Generate SVG from https://github.com/IllDepence/SVG_pitch
 
