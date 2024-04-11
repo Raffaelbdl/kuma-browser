@@ -49,3 +49,6 @@ To start the Kuma Browser, select `Tools` → `Kuma Browser`
 I provide my own template, but it can be freely modified from the `config/` folder.
 
 ![kuma](./resources/kuma.png)
+
+
+*You can change between くまきゅう and くまゆる by using light or dark theme.*
