@@ -8,6 +8,15 @@
 
 Kuma Browser enables a few functionalities from the [jpdb.io](jpdb.io) search engine directly within Anki.
 
+> [!IMPORTANT]
+> Kuma Browser is not an official JPDB addon. It simply aims to faciliate the creation of Anki cards, but does not want to replace JPDB. 
+> 
+> People from JPDB if you see this, please make an offline app for your website <3
+
+> [!NOTE]
+> Kuma Browser is a project in development, and features are added when I need them. 
+> You can contribute by [adding an Issue](https://github.com/Raffaelbdl/kuma-browser/issues/new) or making a Pull Request.
+
 ## Installation
 The installation process is similar to other Anki plugins and can be accomplished in three steps:
 
