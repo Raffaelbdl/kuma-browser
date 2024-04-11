@@ -1,0 +1,12 @@
+<!-- checkbox hack to display furigana on click -->
+
+<div class="japanese furihide">
+	<input type="checkbox" id="demo"/>
+	<label for="demo">
+		<span lang="ja">{{furigana:Spelling}}</span>
+	</label>
+</div>
+
+<div lang="ja" class=smallEnglish>
+	{{PartOfSpeech}}
+</div>
