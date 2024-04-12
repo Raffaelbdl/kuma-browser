@@ -64,6 +64,8 @@ class Anki_SearchWidget(aqt.QWidget):
         self.search_layout.addWidget(self.query_results_list)
 
     def widget_init(self):
+        self.query_lineEdit.returnPressed.connect(self.on_search_pressed)
+
         self.select_deck_comboBox.addItems(self.decks_list)
         self.select_deck_comboBox.currentIndexChanged.connect(self.on_deck_selected)
 
@@ -149,6 +151,8 @@ class JPDB_SearchWidget(aqt.QWidget):
         self.hide_generate()
 
     def widget_init(self):
+        self.query_lineEdit.returnPressed.connect(self._on_search_pressed)
+
         self.query_results_list.currentItemChanged.connect(
             lambda: self._on_query_results_changed()
         )
