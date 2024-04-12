@@ -1,7 +1,11 @@
 """Contains the main Widget class."""
 
+from typing import Optional
+
 import aqt
 import aqt.qt
+
+from PyQt6 import QtCore
 
 from .anki import KumaAnki
 from .widget import Anki_SearchWidget
@@ -40,6 +44,8 @@ class KumaBrowser_Main(aqt.QWidget):
         self.jpdb_search_widget.hide()
         self._layout.addWidget(self.jpdb_search_widget)
 
+        aqt.QShortcut(aqt.QKeySequence("Escape"), self, activated=self.on_Espace)
+
     def on_search_triggered(self) -> None:
         self.jpdb_search_widget.hide()
         self.anki_search_widget.show()
@@ -51,6 +57,9 @@ class KumaBrowser_Main(aqt.QWidget):
         self.jpdb_search_widget.show()
         self.search_action.setChecked(False)
         self.jpdb_action.setChecked(True)
+
+    def on_Espace(self):
+        self.close()
 
 
 def open_interface():
