@@ -150,3 +150,8 @@ def search_all_expressions_jpdb_url(query: str) -> List[Url]:
         )
 
     return entries
+
+
+def get_all_entries_from_one_page(jpdb_soup: BeautifulSoup) -> List[str]:
+    entries = jpdb_soup.find_all(class_="vocabulary-spelling")
+    return [s.find("a", href=True)["href"] for s in entries]

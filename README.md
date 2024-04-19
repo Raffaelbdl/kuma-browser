@@ -44,6 +44,16 @@ To start the Kuma Browser, select `Tools` → `Kuma Browser`
 
 - `Generate Note` will create the note associated to the JPDB entry.
 
+### The JPDB Vocabulary List Tab
+
+- The `JPDB VocabList` tab allows to create Anki notes from JPDB vocabulary lists.
+
+- You can enter a link of a vocabulary list, eg. `https://jpdb.io/novel/5829/kuma-kuma-kuma-bear/vocabulary-lis` and click `Search vocab list on JPDB` to see what notes will be created.
+  
+- `Generate all notes` will create all the notes of the search result.
+
+- Note existence is checked based on the Expression field, which might not be sufficient to fully separate JPDB entries in practice.
+
 ### Provided Template
 
 I provide my own template, but it can be freely modified from the `config/` folder.
