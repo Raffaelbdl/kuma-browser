@@ -1,5 +1,8 @@
 """Contains the features' interfaces."""
 
+import json
+import os
+from pathlib import Path
 from typing import Callable, Optional, List
 
 import aqt
@@ -303,12 +306,17 @@ class JPDB_VocabListWidget(aqt.QWidget):
         self.decks_list = KumaAnki.decks().all_names(force_default=False)
         self.current_deck = self.decks_list[0]
 
+        self.prog_bar = aqt.QProgressBar(self)
+        self.prog_bar.hide()
+
         self._layout = aqt.QFormLayout(self)
         self.layout_init()
         self.widget_init()
 
         self.search_thread = aqt.QThread()
         self.generate_thread = aqt.QThread()
+
+        self.last_query = ""
 
     def layout_init(self):
         self._layout.addRow("Query: ", self.query_lineEdit)
@@ -318,6 +326,7 @@ class JPDB_VocabListWidget(aqt.QWidget):
         self._layout.addWidget(self.deck_label)
         self._layout.addWidget(self.select_deck_comboBox)
         self._layout.addWidget(self.generate_button)
+        self._layout.addWidget(self.prog_bar)
 
         self.wait_label.hide()
 
@@ -343,10 +352,20 @@ class JPDB_VocabListWidget(aqt.QWidget):
 
         query = self.query_lineEdit.text()
         if JPDB.base_url not in query:
+            self.can_search = True
+            self.wait_label.hide()
             showInfo("Please enter a JPDB url.")
             return
         if "/vocabulary-list" not in query:
+            self.can_search = True
+            self.wait_label.hide()
             showInfo("Please enter a vocabulary list url.")
+            return
+        self.last_query = query
+
+        entries = self.load_urls(query)
+        if len(entries) > 0:
+            self._on_search_finished(entries)
             return
 
         self.wait_label.show()
@@ -368,12 +387,18 @@ class JPDB_VocabListWidget(aqt.QWidget):
         self.query_results = entries
         self.query_results_list.addItems(entries)
 
+        self.save_urls(self.last_query, self.query_results)
+
     def generate_or_update(self) -> None:
         if not self.can_generate:
             return
+        self.can_search = False
         self.can_generate = False
 
         self.hide_deck_widget()
+        self.prog_bar.show()
+        self.prog_bar.setRange(0, len(self.query_results))
+        self.prog_bar.setValue(0)
 
         self.generation_worker = VLGenerationThread(
             self.current_deck, self.query_results
@@ -384,11 +409,12 @@ class JPDB_VocabListWidget(aqt.QWidget):
         self.generation_worker.start()
 
     def _on_generating(self, i):
-        print(i)
+        self.prog_bar.setValue(i)
 
     def _on_generation_finished(self):
         self.can_generate = True
         self.show_deck_widget()
+        self.prog_bar.hide()
         showInfo("Generation Finished!")
 
     def on_query_results_doubleClicked(self) -> None:
@@ -406,3 +432,24 @@ class JPDB_VocabListWidget(aqt.QWidget):
     def show_deck_widget(self):
         self.deck_label.show()
         self.select_deck_comboBox.show()
+
+    def save_urls(self, vocab_list: str, urls: List[str]):
+        path = Path(__file__).parent.joinpath("vocab_lists")
+        os.makedirs(path, exist_ok=True)
+
+        with path.joinpath(self._get_key(vocab_list)).open("w") as f:
+            json.dump(urls, f)
+
+    def load_urls(self, vocab_list: str) -> List[str]:
+        path = Path(__file__).parent.joinpath("vocab_lists")
+        path = path.joinpath(self._get_key(vocab_list))
+
+        if not path.exists():
+            return []
+
+        with path.open("r") as f:
+            urls = json.load(f)
+        return urls
+
+    def _get_key(self, vocab_list: str) -> str:
+        return vocab_list.split("/")[-2]
