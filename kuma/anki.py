@@ -7,6 +7,7 @@ import anki.collection
 import anki.decks
 import anki.models
 import anki.notes
+import anki.cards
 
 import aqt
 import aqt.qt
@@ -144,3 +145,13 @@ def reposition_on_frequency(deck_name: str) -> None:
             cards_to_update.append(card)
     KumaAnki.collection().update_cards(cards_to_update)
     # expression, frequency
+
+
+def equal_note(
+    note: anki.notes.Note, jpdb_note: JPDB_Note, *, check_spelling: bool = False
+) -> bool:
+    if note.fields[0] != jpdb_note.expression:
+        return False
+    if check_spelling and note.fields[2] != jpdb_note.spelling:
+        return False
+    return True
