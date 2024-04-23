@@ -11,7 +11,7 @@ import aqt.editor
 from PyQt6.QtCore import Qt
 
 
-from .anki import KumaAnki
+from .anki import KumaAnki, reposition_on_frequency
 from .jpdb import JPDB, JPDB_Note
 from .jpdb import search_all_expressions_jpdb_url
 from .jpdb import load_url
@@ -453,3 +453,31 @@ class JPDB_VocabListWidget(aqt.QWidget):
 
     def _get_key(self, vocab_list: str) -> str:
         return vocab_list.split("/")[-2]
+
+
+class RepositionWidget(aqt.QWidget):
+    def __init__(self, parent: aqt.QWidget):
+        super().__init__(parent)
+
+        self.deck_label = aqt.QLabel("Select a deck", self)
+        self.select_deck_comboBox = aqt.QComboBox(self)
+        self.reposition_button = aqt.QPushButton("Reposition all notes", self)
+
+        self._layout = aqt.QFormLayout(self)
+        self._layout.addWidget(self.deck_label)
+        self._layout.addWidget(self.select_deck_comboBox)
+        self._layout.addWidget(self.reposition_button)
+
+        self.decks_list = KumaAnki.decks().all_names(force_default=False)
+        self.current_deck = self.decks_list[0]
+        self.select_deck_comboBox.addItems(self.decks_list)
+        self.select_deck_comboBox.currentIndexChanged.connect(self.on_deck_selected)
+
+        self.reposition_button.pressed.connect(self.on_reposition_button_pressed)
+
+    def on_deck_selected(self):
+        self.current_deck = self.select_deck_comboBox.currentText()
+
+    def on_reposition_button_pressed(self):
+        reposition_on_frequency(self.current_deck)
+        showInfo("Repositioned!")

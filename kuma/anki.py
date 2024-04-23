@@ -1,6 +1,6 @@
 """Anki related functions."""
 
-from typing import Optional
+from typing import Optional, List
 
 import anki
 import anki.collection
@@ -71,7 +71,7 @@ class KumaAnki:
         KumaAnki.collection().addNote(ankiNote)
 
     @staticmethod
-    def find_notes(query: Optional[str] = None) -> Optional[int]:
+    def find_notes(query: Optional[str] = None) -> List[int]:
         if query is None or query == "":
             return []
         return list(map(int, KumaAnki.collection().find_notes(query)))
@@ -111,3 +111,36 @@ class KumaAnki:
     def get_cards_of_note(note_id: int) -> list[int]:
         """Returns the cards linked to a note."""
         return KumaAnki.find_cards("nid:" + str(note_id))
+
+
+from operator import itemgetter
+
+
+def reposition_on_frequency(deck_name: str) -> None:
+    notes_id = KumaAnki.find_notes(f'"deck:{deck_name}"')
+    notes = [KumaAnki.collection().get_note(i) for i in notes_id]
+
+    name_freq = []
+    for n in notes:
+        frequency = n.fields[4]
+        if frequency == "" or frequency is None:
+            frequency = 200_000
+        else:
+            frequency = int(frequency)
+
+        name_freq.append((n.id, frequency))
+
+    name_freq.sort(key=itemgetter(1))
+
+    cards_to_update = []
+    for i, item in enumerate(name_freq):
+        print(i / len(name_freq))
+        cards_id = KumaAnki.get_cards_of_note(item[0])
+        for _id in cards_id:
+            card = KumaAnki.collection().get_card(_id)
+            if card.type > 0:
+                continue
+            card.due = i
+            cards_to_update.append(card)
+    KumaAnki.collection().update_cards(cards_to_update)
+    # expression, frequency
