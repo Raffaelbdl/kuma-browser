@@ -54,6 +54,12 @@ To start the Kuma Browser, select `Tools` → `Kuma Browser`
 
 - Note existence is checked based on the Expression field, which might not be sufficient to fully separate JPDB entries in practice.
 
+### The Reposition Tab
+
+- The `Reposition` tab allows to reposition cards based on the frequency field for a given deck.
+
+- Only the `New` cards will be repositioned.
+
 ### Provided Template
 
 I provide my own template, but it can be freely modified from the `config/` folder.
