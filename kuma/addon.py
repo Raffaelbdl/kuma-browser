@@ -1,17 +1,16 @@
 """Contains the main Widget class."""
 
-from typing import Optional
+from functools import partial
 
 import aqt
-from aqt.utils import showInfo
 import aqt.qt
 
-from PyQt6 import QtCore
 
-from .anki import KumaAnki, reposition_on_frequency
+from .anki import KumaAnki
 from .widget import Anki_SearchWidget
 from .widget import JPDB_SearchWidget
 from .widget import JPDB_VocabListWidget
+from .widget import JPDB_API_VocabListWidget
 from .widget import RepositionWidget
 
 
@@ -22,93 +21,55 @@ class KumaBrowser_Main(aqt.QWidget):
 
         # Tool Bar
         tool_bar = aqt.QToolBar("Kuma Browser Toolbar", self)
-
-        self.search_action = aqt.QAction("Search", self)
-        self.search_action.triggered.connect(self.on_search_triggered)
-        self.search_action.setCheckable(True)
-        self.search_action.setChecked(True)
-        tool_bar.addAction(self.search_action)
-
-        self.jpdb_action = aqt.QAction("JPDB", self)
-        self.jpdb_action.triggered.connect(self.on_jpdb_triggered)
-        self.jpdb_action.setCheckable(True)
-        self.jpdb_action.setChecked(False)
-        tool_bar.addAction(self.jpdb_action)
-
-        self.jpdb_vl_action = aqt.QAction("JPDB VocabList", self)
-        self.jpdb_vl_action.triggered.connect(self.on_vl_jpdb_triggered)
-        self.jpdb_vl_action.setCheckable(True)
-        self.jpdb_vl_action.setChecked(False)
-        tool_bar.addAction(self.jpdb_vl_action)
-
-        self.reposition_action = aqt.QAction("Reposition", self)
-        self.reposition_action.triggered.connect(self.on_reposition_triggered)
-        self.reposition_action.setCheckable(True)
-        self.reposition_action.setChecked(False)
-        tool_bar.addAction(self.reposition_action)
-
         self._layout.addWidget(tool_bar)
 
-        # Anki Page
-        self.anki_search_widget = Anki_SearchWidget(self)
-        self.anki_search_widget.show()
-        self._layout.addWidget(self.anki_search_widget)
+        self._actions = {}
+        self.add_action(
+            tool_bar,
+            "Search",
+            Anki_SearchWidget(self),
+        )
+        self.add_action(
+            tool_bar,
+            "JPDB",
+            JPDB_SearchWidget(self),
+        )
+        self.add_action(
+            tool_bar,
+            "JPDB VocabList",
+            JPDB_VocabListWidget(self),
+        )
+        self.add_action(
+            tool_bar,
+            "Reposition",
+            RepositionWidget(self),
+        )
+        self.add_action(
+            tool_bar,
+            "JPDB API VocabList",
+            JPDB_API_VocabListWidget(self),
+        )
 
-        # JPDB Page
-        self.jpdb_search_widget = JPDB_SearchWidget(self)
-        self.jpdb_search_widget.hide()
-        self._layout.addWidget(self.jpdb_search_widget)
-
-        # JPDB VL Page
-        self.jpdb_vl_widget = JPDB_VocabListWidget(self)
-        self.jpdb_vl_widget.hide()
-        self._layout.addWidget(self.jpdb_vl_widget)
-
-        self.reposition_widget = RepositionWidget(self)
-        self.reposition_widget.hide()
-        self._layout.addWidget(self.reposition_widget)
-
+        self.show_hide(0)
         aqt.QShortcut(aqt.QKeySequence("Escape"), self, activated=self.on_Espace)
 
-    def on_search_triggered(self) -> None:
-        self.jpdb_search_widget.hide()
-        self.jpdb_vl_widget.hide()
-        self.anki_search_widget.show()
-        self.reposition_widget.hide()
-        self.jpdb_action.setChecked(False)
-        self.jpdb_vl_action.setChecked(False)
-        self.search_action.setChecked(True)
-        self.reposition_action.setChecked(False)
+    def add_action(self, toolbar: aqt.QToolBar, name: str, widget: aqt.QWidget):
+        _action = aqt.QAction(name)
+        _action.triggered.connect(partial(self.show_hide, len(self._actions)))
+        _action.setCheckable(True)
+        toolbar.addAction(_action)
+        self._layout.addWidget(widget)
+        self._actions[name] = {"action": _action, "widget": widget}
 
-    def on_jpdb_triggered(self) -> None:
-        self.anki_search_widget.hide()
-        self.jpdb_vl_widget.hide()
-        self.jpdb_search_widget.show()
-        self.reposition_widget.hide()
-        self.search_action.setChecked(False)
-        self.jpdb_vl_action.setChecked(False)
-        self.jpdb_action.setChecked(True)
-        self.reposition_action.setChecked(False)
-
-    def on_vl_jpdb_triggered(self) -> None:
-        self.anki_search_widget.hide()
-        self.jpdb_search_widget.hide()
-        self.jpdb_vl_widget.show()
-        self.reposition_widget.hide()
-        self.search_action.setChecked(False)
-        self.jpdb_action.setChecked(False)
-        self.jpdb_vl_action.setChecked(True)
-        self.reposition_action.setChecked(False)
-
-    def on_reposition_triggered(self) -> None:
-        self.anki_search_widget.hide()
-        self.jpdb_search_widget.hide()
-        self.jpdb_vl_widget.hide()
-        self.reposition_widget.show()
-        self.search_action.setChecked(False)
-        self.jpdb_action.setChecked(False)
-        self.jpdb_vl_action.setChecked(False)
-        self.reposition_action.setChecked(True)
+    def show_hide(self, n):
+        print(n)
+        for i, v in enumerate(self._actions.values()):
+            if i == n:
+                v["widget"].show()
+                v["action"].setChecked(True)
+            else:
+                v["widget"].hide()
+                v["action"].setChecked(False)
 
     def on_Espace(self):
         self.close()
