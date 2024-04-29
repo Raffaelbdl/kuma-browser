@@ -3,7 +3,7 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./resources/white.png">
   <source media="(prefers-color-scheme: light)" srcset="./resources/black.png">
-  <img alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="./resources/black.png" align="right" width="40%">
+  <img alt="Shows Kumakyuu in dark mode and Kumayuru in light mode." src="./resources/black.png" align="right" width="40%">
 </picture>
 
 Kuma Browser enables a few functionalities from the [jpdb.io](jpdb.io) search engine directly within Anki.
