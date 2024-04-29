@@ -10,7 +10,7 @@ from .anki import KumaAnki
 from .widget import Anki_SearchWidget
 from .widget import JPDB_SearchWidget
 from .widget import JPDB_VocabListWidget
-from .widget import JPDB_API_VocabListWidget
+from .jpdb_api import JPDB_API_VocabListWidget
 from .widget import RepositionWidget
 
 

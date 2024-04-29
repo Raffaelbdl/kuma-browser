@@ -1,7 +1,15 @@
 from copy import copy
 from dataclasses import dataclass
 import requests
+from typing import Optional
 
+
+import aqt
+from aqt.utils import showInfo
+import aqt.editor
+
+
+from .anki import KumaAnki
 from .jpdb import JPDB_Note, get_pitch_html, PITCH_DICTIONARY
 
 
@@ -28,8 +36,20 @@ class JpdbAPI:
             "Authorization": f"Bearer {self.token}",
         }
         response = requests.post(url, json=payload, headers=headers)
-        notes = self.notes(response.json()["vocabulary"])
-        return notes
+
+        if response.status_code == 200:
+            return self.notes(response.json()["vocabulary"])
+
+        if response.status_code == 400:
+            showInfo("Something went wrong. Please check the Deck Id")
+            return []
+
+        if response.status_code == 403:
+            showInfo("Please check your API key")
+            return []
+
+        showInfo("Something unexpected went wrong.")
+        return []
 
     def notes(self, note_ids) -> dict:
         url = "https://jpdb.io/api/v1/lookup-vocabulary"
@@ -211,3 +231,124 @@ def to_jpdb_note(note: Note):
 
 def dict_on_first(_list):
     return {l[0]: l[1:] for l in _list}
+
+
+class VLAPIGenerationThread(aqt.QThread):
+    finished = aqt.pyqtSignal()
+    generated = aqt.pyqtSignal(int)
+
+    def __init__(self, notes: list, current_deck: str):
+        super().__init__()
+        self.notes = notes
+        self.current_deck = current_deck
+
+    def run(self):
+        for i, n in enumerate(self.notes):
+            self.generated.emit(i)
+
+            query = f'"deck:{self.current_deck}" Expression:{n.expression}'
+            if len(KumaAnki.find_notes(query)) > 0:
+                continue
+
+            try:
+                KumaAnki.add_note(n, self.current_deck)
+            except:
+                continue
+
+        self.finished.emit()
+
+
+import json
+from pathlib import Path
+from utils.pyqt6 import LineEditRadioButton
+
+
+class JPDB_API_VocabListWidget(aqt.QWidget):
+    def __init__(self, parent: aqt.QWidget, *, previous_query: Optional[str] = None):
+        super().__init__(parent)
+
+        self.path_to_config = Path(__file__).resolve().parent / "config" / "api.json"
+        if not self.path_to_config.exists():
+            config = {"token": ""}
+        else:
+            with self.path_to_config.open("r") as f:
+                config = json.load(f)
+
+        self.token_lineEdit = LineEditRadioButton(
+            self, config["token"], False, "Check to save API key."
+        )
+        self.deckId_lineEdit = aqt.QLineEdit(self)
+
+        self.deckId_lineEdit.setText("0")
+        self.deckId_lineEdit.setValidator(aqt.QIntValidator())
+
+        self.deck_label = aqt.QLabel("Select a deck", self)
+        self.select_deck_comboBox = aqt.QComboBox(self)
+
+        self.generate_button = aqt.QPushButton("Generate", self)
+
+        self.prog_bar = aqt.QProgressBar(self)
+        self.prog_bar.hide()
+
+        self.can_generate = True
+        self.decks_list = KumaAnki.decks().all_names(force_default=False)
+
+        self._layout = aqt.QFormLayout(self)
+        self.layout_init()
+        self.widget_init()
+
+    def layout_init(self):
+        self._layout.addRow("Enter Token: ", self.token_lineEdit)
+        self._layout.addRow("Enter Deck Id: ", self.deckId_lineEdit)
+        self._layout.addWidget(self.deck_label)
+        self._layout.addWidget(self.select_deck_comboBox)
+        self._layout.addWidget(self.generate_button)
+        self._layout.addWidget(self.prog_bar)
+
+    def widget_init(self):
+        self.select_deck_comboBox.addItems(self.decks_list)
+        self.generate_button.pressed.connect(self.generate_or_update)
+
+    def generate_or_update(self) -> None:
+        if not self.can_generate:
+            return
+        self.can_generate = False
+
+        token = self.token_lineEdit.text()
+
+        if self.token_lineEdit.isChecked():
+            with self.path_to_config.open("w") as f:
+                json.dump({"token": self.token_lineEdit.text()}, f)
+
+        deck_id = self.deckId_lineEdit.text()
+        current_deck = self.select_deck_comboBox.currentText()
+        api = JpdbAPI(token)
+
+        notes = api.vocabulary_list(int(deck_id))
+        if len(notes) == 0:
+            self.can_generate = True
+            self.prog_bar.hide()
+            return
+
+        notes = [
+            to_jpdb_note(Note(**{k: v for (k, v) in zip(Note.__dataclass_fields__, n)}))
+            for n in notes
+        ]
+
+        self.prog_bar.show()
+        self.prog_bar.setRange(0, len(notes))
+        self.prog_bar.setValue(0)
+
+        self.generation_worker = VLAPIGenerationThread(notes, current_deck)
+        self.generation_worker.generated.connect(self._on_generating)
+        self.generation_worker.finished.connect(self._on_generation_finished)
+        self.generation_worker.finished.connect(self.generation_worker.quit)
+        self.generation_worker.start()
+
+    def _on_generating(self, i):
+        self.prog_bar.setValue(i)
+
+    def _on_generation_finished(self):
+        self.can_generate = True
+        self.prog_bar.hide()
+        showInfo("Generation Finished!")
