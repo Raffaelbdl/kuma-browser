@@ -3,7 +3,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Callable, Optional, List
+from typing import Optional, List
 
 import aqt
 from aqt.utils import showInfo
@@ -16,6 +16,7 @@ from .jpdb import JPDB, JPDB_Note
 from .jpdb import search_all_expressions_jpdb_url
 from .jpdb import load_url
 from .jpdb import get_all_entries_from_one_page
+from .jpdb_api import JpdbAPI, to_jpdb_note, Note
 
 
 class Anki_SearchWidget(aqt.QWidget):
