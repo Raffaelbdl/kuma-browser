@@ -59,6 +59,23 @@ To start the Kuma Browser, select `Tools` → `Kuma Browser`
 - The `Reposition` tab allows to reposition cards based on the frequency field for a given deck.
 
 - Only the `New` cards will be repositioned.
+- 
+### The JPDB API Vocabulary List Tab
+
+- The `JPDB VocabList` tab allows to create Anki notes from JPDB vocabulary lists using the JPDB API.
+  
+- This way is faster and more reliable than the normal one, but it does not provide example sentences.
+
+- Usage:
+  - Log into your JPDB account
+  - In `Settings` get your API key at the bottom of the page.
+  - In `Learn(x)` click on the vocabulary list you want to add, and get the Id at the end of the url.
+  - In Anki, enter the information and press `Generate`.
+
+- Note existence is checked based on the Expression field, which might not be sufficient to fully separate JPDB entries in practice.
+  
+- You can save your API key by toggling the check box.
+
 
 ### Provided Template
 
