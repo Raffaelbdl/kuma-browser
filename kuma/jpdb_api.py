@@ -1,16 +1,17 @@
 from copy import copy
 from dataclasses import dataclass
+import json
 import requests
+from pathlib import Path
 from typing import Optional
-
 
 import aqt
 from aqt.utils import showInfo
 import aqt.editor
 
-
 from .anki import KumaAnki
 from .jpdb import JPDB_Note, get_pitch_html, PITCH_DICTIONARY
+from utils.pyqt6 import LineEditRadioButton
 
 
 @dataclass
@@ -75,7 +76,7 @@ class JpdbAPI:
         return notes_info
 
 
-def beautify_partofspeech(pos, expression=None) -> str:
+def beautify_partofspeech(pos) -> str:
     partofspeech_eq = {
         "n": "Noun",
         "pn": "Pronoun",
@@ -210,7 +211,8 @@ def beautify_partofspeech(pos, expression=None) -> str:
 def beautify_meaning(meaning) -> str:
     result = ""
     for i, m in enumerate(meaning):
-        result += f"{i+1}. {m}\n"
+        result += f"{i+1}. {m}<br>"
+    print(result)
     return result
 
 
@@ -220,17 +222,13 @@ def to_jpdb_note(note: Note):
         pitch = ""
     return JPDB_Note(
         expression=note.spelling,
-        part_of_speech=beautify_partofspeech(note.part_of_speech, note.spelling),
+        part_of_speech=beautify_partofspeech(note.part_of_speech),
         spelling=note.reading,
         pitch=pitch,
         frequency=str(note.frequency_rank),
         meanings=beautify_meaning(note.meanings),
         examples="",  # not provided by the API
     )
-
-
-def dict_on_first(_list):
-    return {l[0]: l[1:] for l in _list}
 
 
 class VLAPIGenerationThread(aqt.QThread):
@@ -256,11 +254,6 @@ class VLAPIGenerationThread(aqt.QThread):
                 continue
 
         self.finished.emit()
-
-
-import json
-from pathlib import Path
-from utils.pyqt6 import LineEditRadioButton
 
 
 class JPDB_API_VocabListWidget(aqt.QWidget):
