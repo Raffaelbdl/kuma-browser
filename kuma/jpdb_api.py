@@ -2,7 +2,7 @@ from copy import copy
 from dataclasses import dataclass
 import requests
 
-from kuma.jpdb import JPDB_Note, get_pitch_html, PITCH_DICTIONARY
+from .jpdb import JPDB_Note, get_pitch_html, PITCH_DICTIONARY
 
 
 @dataclass
