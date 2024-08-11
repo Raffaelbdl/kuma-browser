@@ -209,31 +209,3 @@ def to_jpdb_note(note: Note):
 
 def dict_on_first(_list):
     return {l[0]: l[1:] for l in _list}
-
-
-def main():
-    api = JpdbAPI("376af3c41745f8d9cb83ee09e4e80629")
-    import time
-
-    start = time.time()
-    notes = list(
-        map(
-            lambda n: to_jpdb_note(
-                Note(**{k: v for (k, v) in zip(Note.__dataclass_fields__, n)})
-            ),
-            api.vocabulary_list(1),
-        )
-    )
-    print("map", time.time() - start)
-
-    start = time.time()
-    notes = api.vocabulary_list(1)
-    notes = [
-        to_jpdb_note(Note(**{k: v for (k, v) in zip(Note.__dataclass_fields__, n)}))
-        for n in notes
-    ]
-    print("normal", time.time() - start)
-
-
-if __name__ == "__main__":
-    main()
