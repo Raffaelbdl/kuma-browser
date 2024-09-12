@@ -277,11 +277,6 @@ class VLGenerationThread(aqt.QThread):
             if is_in_deck(self.current_deck, url):
                 continue
 
-            # expression = url.split("/")[-1]
-            # query = f'"deck:{self.current_deck}" Expression:{expression}'
-            # if len(KumaAnki.find_notes(query)) > 0:
-            #     continue
-
             jpdb_note = JPDB_Note.from_jpdb(url)
             KumaAnki.add_note(jpdb_note, self.current_deck)
         self.finished.emit()
