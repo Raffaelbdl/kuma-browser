@@ -11,7 +11,7 @@ import aqt.editor
 from PyQt6.QtCore import Qt
 
 
-from .anki import KumaAnki, reposition_on_frequency
+from .anki import KumaAnki, reposition_on_frequency, is_in_deck
 from .jpdb import JPDB, JPDB_Note
 from .jpdb import search_all_expressions_jpdb_url
 from .jpdb import load_url
@@ -274,10 +274,13 @@ class VLGenerationThread(aqt.QThread):
         for i, url in enumerate(self.urls):
             self.generated.emit(i)
 
-            expression = url.split("/")[-1]
-            query = f'"deck:{self.current_deck}" Expression:{expression}'
-            if len(KumaAnki.find_notes(query)) > 0:
+            if is_in_deck(self.current_deck, url):
                 continue
+
+            # expression = url.split("/")[-1]
+            # query = f'"deck:{self.current_deck}" Expression:{expression}'
+            # if len(KumaAnki.find_notes(query)) > 0:
+            #     continue
 
             jpdb_note = JPDB_Note.from_jpdb(url)
             KumaAnki.add_note(jpdb_note, self.current_deck)

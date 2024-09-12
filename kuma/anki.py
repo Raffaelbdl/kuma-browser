@@ -61,6 +61,7 @@ class KumaAnki:
         ankiNote["Frequency"] = note.frequency
         ankiNote["Meanings"] = note.meanings
         ankiNote["Examples"] = note.examples
+        ankiNote["ID"] = note.note_id
 
         return ankiNote
 
@@ -155,3 +156,8 @@ def equal_note(
     if check_spelling and note.fields[2] != jpdb_note.spelling:
         return False
     return True
+
+
+def is_in_deck(deck: str, note_id: str) -> bool:
+    query = f'"deck:{deck}" ID:{note_id}'
+    return len(KumaAnki.find_notes(query))
