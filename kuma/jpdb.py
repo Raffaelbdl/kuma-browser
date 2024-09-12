@@ -107,6 +107,8 @@ class JPDB_Note:
     frequency: str
     meanings: str
     examples: str
+    vid: str
+    sid: str
 
     @classmethod
     def from_jpdb(cls, url: Url):
