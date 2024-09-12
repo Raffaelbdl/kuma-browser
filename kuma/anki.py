@@ -17,7 +17,7 @@ from .setup import load_template
 
 
 class KumaAnki:
-    model_name: str = "Kuma Model"
+    model_name: str = "Kuma Model 2.0"
     window = aqt.mw
 
     @staticmethod
@@ -61,7 +61,10 @@ class KumaAnki:
         ankiNote["Frequency"] = note.frequency
         ankiNote["Meanings"] = note.meanings
         ankiNote["Examples"] = note.examples
+        ankiNote["VId"] = note.vid
+        ankiNote["SId"] = note.sid
 
+        
         return ankiNote
 
     @staticmethod

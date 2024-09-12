@@ -36,6 +36,8 @@ def load_template():
             "Frequency",
             "Meanings",
             "Examples",
+            "VId",
+            "SId"
         ],
         "css": formats["css"],
         "cardTemplates": [

@@ -21,6 +21,8 @@ class Note:
     frequency_rank: int
     meanings: str
     part_of_speech: str
+    vid: int
+    sid: int
 
 
 class JpdbAPI:
@@ -63,6 +65,8 @@ class JpdbAPI:
                 "frequency_rank",
                 "meanings",
                 "part_of_speech",
+                "vid",
+                "sid"
             ],
         }
         headers = {
@@ -228,6 +232,8 @@ def to_jpdb_note(note: Note):
         frequency=str(note.frequency_rank),
         meanings=beautify_meaning(note.meanings),
         examples="",  # not provided by the API
+        vid=str(note.vid),
+        sid=str(note.sid)
     )
 
 
@@ -244,7 +250,7 @@ class VLAPIGenerationThread(aqt.QThread):
         for i, n in enumerate(self.notes):
             self.generated.emit(i)
 
-            query = f'"deck:{self.current_deck}" Expression:{n.expression}'
+            query = f'"deck:{self.current_deck}" VId:{n.vid} SId:{n.sid}'
             if len(KumaAnki.find_notes(query)) > 0:
                 continue
 
