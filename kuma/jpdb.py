@@ -107,6 +107,7 @@ class JPDB_Note:
     frequency: str
     meanings: str
     examples: str
+    note_id: str  # jpdb -> url, jpdb_api -> card_id
 
     @classmethod
     def from_jpdb(cls, url: Url):
@@ -128,6 +129,7 @@ class JPDB_Note:
             frequency=frequency,
             meanings=meanings,
             examples=examples,
+            note_id=url,
         )
 
 
