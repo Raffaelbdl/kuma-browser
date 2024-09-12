@@ -160,4 +160,8 @@ def equal_note(
 
 def is_in_deck(deck: str, note_id: str) -> bool:
     query = f'"deck:{deck}" ID:{note_id}'
-    return len(KumaAnki.find_notes(query))
+    try:
+        return len(KumaAnki.find_notes(query))
+    except:
+        print(query)
+        return True  # won't create
