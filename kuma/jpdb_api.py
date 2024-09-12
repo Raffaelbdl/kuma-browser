@@ -9,7 +9,7 @@ import aqt
 from aqt.utils import showInfo
 import aqt.editor
 
-from .anki import KumaAnki
+from .anki import KumaAnki, is_in_deck
 from .jpdb import JPDB_Note, get_pitch_html, PITCH_DICTIONARY
 from utils.pyqt6 import LineEditRadioButton
 
@@ -21,6 +21,7 @@ class Note:
     frequency_rank: int
     meanings: str
     part_of_speech: str
+    note_id: str
 
 
 class JpdbAPI:
@@ -73,6 +74,11 @@ class JpdbAPI:
 
         response = requests.post(url, json=payload, headers=headers)
         notes_info = response.json()["vocabulary_info"]
+        # merge ids to create JPDB_Note's note_id
+        notes_info = [
+            info + ["".join(list(map(lambda x: str(x), nid)))]
+            for (info, nid) in zip(notes_info, note_ids)
+        ]
         return notes_info
 
 
@@ -212,7 +218,6 @@ def beautify_meaning(meaning) -> str:
     result = ""
     for i, m in enumerate(meaning):
         result += f"{i+1}. {m}<br>"
-    print(result)
     return result
 
 
@@ -228,6 +233,7 @@ def to_jpdb_note(note: Note):
         frequency=str(note.frequency_rank),
         meanings=beautify_meaning(note.meanings),
         examples="",  # not provided by the API
+        note_id=note.note_id,
     )
 
 
@@ -235,7 +241,7 @@ class VLAPIGenerationThread(aqt.QThread):
     finished = aqt.pyqtSignal()
     generated = aqt.pyqtSignal(int)
 
-    def __init__(self, notes: list, current_deck: str):
+    def __init__(self, notes: list[JPDB_Note], current_deck: str):
         super().__init__()
         self.notes = notes
         self.current_deck = current_deck
@@ -244,8 +250,7 @@ class VLAPIGenerationThread(aqt.QThread):
         for i, n in enumerate(self.notes):
             self.generated.emit(i)
 
-            query = f'"deck:{self.current_deck}" Expression:{n.expression}'
-            if len(KumaAnki.find_notes(query)) > 0:
+            if is_in_deck(self.current_deck, n.note_id):
                 continue
 
             try:
