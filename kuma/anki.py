@@ -136,7 +136,6 @@ def reposition_on_frequency(deck_name: str) -> None:
 
     cards_to_update = []
     for i, item in enumerate(name_freq):
-        print(i / len(name_freq))
         cards_id = KumaAnki.get_cards_of_note(item[0])
         for _id in cards_id:
             card = KumaAnki.collection().get_card(_id)
