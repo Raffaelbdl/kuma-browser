@@ -74,11 +74,8 @@ class JpdbAPI:
 
         response = requests.post(url, json=payload, headers=headers)
         notes_info = response.json()["vocabulary_info"]
-        # merge ids to create JPDB_Note's note_id
-        notes_info = [
-            info + ["".join(list(map(lambda x: str(x), nid)))]
-            for (info, nid) in zip(notes_info, note_ids)
-        ]
+
+        notes_info = [info + [str(nid[0])] for (info, nid) in zip(notes_info, note_ids)]
         return notes_info
 
 
