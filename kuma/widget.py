@@ -11,11 +11,12 @@ import aqt.editor
 from PyQt6.QtCore import Qt
 
 
-from .anki import KumaAnki, reposition_on_frequency
+from .anki import KumaAnki, reposition_on_frequency, is_in_deck
 from .jpdb import JPDB, JPDB_Note
 from .jpdb import search_all_expressions_jpdb_url
 from .jpdb import load_url
 from .jpdb import get_all_entries_from_one_page
+from .jpdb import extract_id
 from .jpdb_api import JpdbAPI, to_jpdb_note, Note
 
 
@@ -215,6 +216,12 @@ class JPDB_SearchWidget(aqt.QWidget):
 
         url_index = self.query_results_list.currentIndex().row()
         jpdb_url = self.query_result_urls[url_index]
+
+        note_id = extract_id(jpdb_url)
+        if is_in_deck(self.current_deck, note_id):
+            showInfo("Note already exists!")
+            return
+
         jpdb_note = JPDB_Note.from_jpdb(jpdb_url)
         KumaAnki.add_note(jpdb_note, self.current_deck)
 
@@ -274,9 +281,8 @@ class VLGenerationThread(aqt.QThread):
         for i, url in enumerate(self.urls):
             self.generated.emit(i)
 
-            expression = url.split("/")[-1]
-            query = f'"deck:{self.current_deck}" Expression:{expression}'
-            if len(KumaAnki.find_notes(query)) > 0:
+            note_id = extract_id(url)
+            if is_in_deck(self.current_deck, note_id):
                 continue
 
             jpdb_note = JPDB_Note.from_jpdb(url)

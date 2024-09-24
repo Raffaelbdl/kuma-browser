@@ -61,6 +61,7 @@ class KumaAnki:
         ankiNote["Frequency"] = note.frequency
         ankiNote["Meanings"] = note.meanings
         ankiNote["Examples"] = note.examples
+        ankiNote["ID"] = note.note_id
 
         return ankiNote
 
@@ -135,7 +136,6 @@ def reposition_on_frequency(deck_name: str) -> None:
 
     cards_to_update = []
     for i, item in enumerate(name_freq):
-        print(i / len(name_freq))
         cards_id = KumaAnki.get_cards_of_note(item[0])
         for _id in cards_id:
             card = KumaAnki.collection().get_card(_id)
@@ -155,3 +155,12 @@ def equal_note(
     if check_spelling and note.fields[2] != jpdb_note.spelling:
         return False
     return True
+
+
+def is_in_deck(deck: str, note_id: str) -> bool:
+    query = f'"deck:{deck}" ID:{note_id}'
+    try:
+        return len(KumaAnki.find_notes(query))
+    except:
+        print(query)
+        return True  # won't create

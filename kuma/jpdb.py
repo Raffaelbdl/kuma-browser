@@ -98,6 +98,10 @@ def extract_examples(jpdb_soup: BeautifulSoup) -> str:
     return examples
 
 
+def extract_id(url: Url) -> str:
+    return url.split("/")[-2]
+
+
 @dataclass
 class JPDB_Note:
     expression: str
@@ -107,6 +111,7 @@ class JPDB_Note:
     frequency: str
     meanings: str
     examples: str
+    note_id: str
 
     @classmethod
     def from_jpdb(cls, url: Url):
@@ -119,6 +124,7 @@ class JPDB_Note:
         pitch = extract_pitch(jpdb_soup, expression)
         meanings = extract_meanings(jpdb_soup)
         examples = extract_examples(jpdb_soup)
+        note_id = extract_id(url)
 
         return JPDB_Note(
             expression=expression,
@@ -128,6 +134,7 @@ class JPDB_Note:
             frequency=frequency,
             meanings=meanings,
             examples=examples,
+            note_id=note_id,
         )
 
 
