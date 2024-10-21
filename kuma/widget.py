@@ -341,7 +341,7 @@ class JPDB_VocabListWidget(aqt.QWidget):
         # help avoid throttle ?
         self.path_to_config = Path(__file__).resolve().parent / "config" / "vl.json"
         if not self.path_to_config.exists():
-            json.dump({"sleep_time": 0.1}, self.path_to_config.open("r"))
+            json.dump({"sleep_time": 0.0}, self.path_to_config.open("r"))
         self.sleep_time = json.load(open(self.path_to_config, "r"))["sleep_time"]
 
     def layout_init(self):
