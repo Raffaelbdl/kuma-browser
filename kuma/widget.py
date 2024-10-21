@@ -3,6 +3,7 @@
 import json
 import os
 from pathlib import Path
+import time
 from typing import Optional, List
 
 import aqt
@@ -232,15 +233,19 @@ class VLSearchThread(aqt.QThread):
     finished = aqt.pyqtSignal(list)
     next_page = aqt.pyqtSignal(int)
 
-    def __init__(self, url: str):
+    def __init__(self, url: str, sleep_time: float):
         super().__init__()
         self.url = url
+
+        self.sleep_time = sleep_time
 
     def run(self):
         entries = self.get_all_entries_from_vocab_list(self.url)
         self.finished.emit(entries)
 
     def get_all_entries_from_vocab_list(self, vl_url):
+        time.sleep(self.sleep_time)
+
         try:
             self.next_page.emit(int(vl_url.split("=")[-1]))
         except ValueError:
@@ -271,10 +276,12 @@ class VLGenerationThread(aqt.QThread):
     finished = aqt.pyqtSignal()
     generated = aqt.pyqtSignal(int)
 
-    def __init__(self, current_deck: str, urls: List[str]):
+    def __init__(self, current_deck: str, urls: List[str], sleep_time: float):
         super().__init__()
         self.current_deck = current_deck
         self.urls = urls
+
+        self.sleep_time = sleep_time
 
     def run(self):
         # cannot be multithreaded due to JPDB constraints
@@ -285,8 +292,14 @@ class VLGenerationThread(aqt.QThread):
             if is_in_deck(self.current_deck, note_id):
                 continue
 
+            time.sleep(self.sleep_time)
             jpdb_note = JPDB_Note.from_jpdb(url)
+
+            if jpdb_note is None:
+                print(f"url {url} was not loaded and skipped")
+                continue  # skip
             KumaAnki.add_note(jpdb_note, self.current_deck)
+
         self.finished.emit()
 
 
@@ -324,6 +337,12 @@ class JPDB_VocabListWidget(aqt.QWidget):
         self.generate_thread = aqt.QThread()
 
         self.last_query = ""
+
+        # help avoid throttle ?
+        self.path_to_config = Path(__file__).resolve().parent / "config" / "vl.json"
+        if not self.path_to_config.exists():
+            json.dump({"sleep_time": 0.1}, self.path_to_config.open("r"))
+        self.sleep_time = json.load(open(self.path_to_config, "r"))["sleep_time"]
 
     def layout_init(self):
         self._layout.addRow("Query: ", self.query_lineEdit)
@@ -377,7 +396,7 @@ class JPDB_VocabListWidget(aqt.QWidget):
 
         self.wait_label.show()
 
-        self.search_worker = VLSearchThread(query)
+        self.search_worker = VLSearchThread(query, self.sleep_time)
         self.search_worker.next_page.connect(self._on_searching)
         self.search_worker.finished.connect(self._on_search_finished)
         self.search_worker.finished.connect(self.search_worker.quit)
@@ -408,7 +427,7 @@ class JPDB_VocabListWidget(aqt.QWidget):
         self.prog_bar.setValue(0)
 
         self.generation_worker = VLGenerationThread(
-            self.current_deck, self.query_results
+            self.current_deck, self.query_results, self.sleep_time
         )
         self.generation_worker.generated.connect(self._on_generating)
         self.generation_worker.finished.connect(self._on_generation_finished)
