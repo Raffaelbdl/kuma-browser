@@ -6,6 +6,11 @@
   <img alt="Shows Kumakyuu in dark mode and Kumayuru in light mode." src="./resources/black.png" align="right" width="40%">
 </picture>
 
+[**Installation**](#installation) |
+[**Features**](#features) |
+[**Common Issues**](#common-issues) |
+
+
 Kuma Browser enables a few functionalities from the [jpdb.io](jpdb.io) search engine directly within Anki.
 
 > [!CAUTION]
@@ -59,7 +64,7 @@ To start the Kuma Browser, select `Tools` → `Kuma Browser`
 - The `Reposition` tab allows to reposition cards based on the frequency field for a given deck.
 
 - Only the `New` cards will be repositioned.
-- 
+
 ### The JPDB API Vocabulary List Tab
 
 - The `JPDB VocabList` tab allows to create Anki notes from JPDB vocabulary lists using the JPDB API.
@@ -85,3 +90,19 @@ I provide my own template, but it can be freely modified from the `config/` fold
 
 
 *You can change between くまきゅう and くまゆる by using light or dark theme.*
+
+## Common Issues
+
+### JPDB Vocabulary List Tab fails
+
+This method to create notes is known to fail a lot. It is supposedly due to jpdb.io restricting users so that they cannot do too many requests too fast 😶 ([#18](https://github.com/Raffaelbdl/kuma-browser/issues/18)). If it happens, you may have been temporarily banned. Wait a bit before trying either the JPDB Vocabulary List scraper or the JPDB Vocabulary List API. 
+
+One way to solve this is to use the API: it should not be limited like the web scraping method.
+
+If you want the example sentences however, you will need to set a delay between each requests. This can be done by setting the parameter `sleep_time` in `config/vl.json`. For example:
+
+```json
+{ "sleep_time": 0.1 }
+```
+
+Do not change the key `sleep_time` as there is no self-repair mechanism 😆

@@ -116,6 +116,8 @@ class JPDB_Note:
     @classmethod
     def from_jpdb(cls, url: Url):
         jpdb_soup = load_url(url)
+        if jpdb_soup is None:
+            return None
 
         expression = jpdb_soup.find("title").text.split(" ")[0]
         part_of_speech = extract_part_of_speech(jpdb_soup)
