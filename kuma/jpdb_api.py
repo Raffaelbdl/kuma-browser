@@ -11,7 +11,7 @@ import aqt.editor
 
 from .anki import KumaAnki, is_in_deck
 from .jpdb import JPDB_Note, get_pitch_html, PITCH_DICTIONARY
-from utils.pyqt6 import LineEditRadioButton
+from .utils.pyqt6 import LineEditRadioButton
 
 
 @dataclass
