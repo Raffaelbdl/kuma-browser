@@ -26,7 +26,7 @@ class Note:
 
 class JpdbAPI:
     def __init__(self, api_key: str):
-        self.token = api_key
+        self.token = api_key.strip()
 
     def vocabulary_list(self, deck_id: int):
         url = "https://jpdb.io/api/v1/deck/list-vocabulary"
@@ -52,6 +52,48 @@ class JpdbAPI:
 
         showInfo("Something unexpected went wrong.")
         return []
+
+    def parse_text(self, text: str) -> list:
+        url = "https://jpdb.io/api/v1/parse"
+        payload = {
+            "text": text,
+            "token_fields": ["vocabulary_index"],
+            "position_length_encoding": "utf16",
+            "vocabulary_fields": [
+                "vid",
+                "sid",
+                "spelling",
+                "reading",
+                "frequency_rank",
+                "meanings",
+                "part_of_speech",
+            ],
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.token}",
+        }
+        response = requests.post(url, json=payload, headers=headers)
+
+        if response.status_code == 403:
+            showInfo("Please check your API key")
+            return []
+        if response.status_code != 200:
+            showInfo("Something unexpected went wrong.")
+            return []
+
+        vocabulary = response.json().get("vocabulary", [])
+
+        seen_vids = set()
+        result = []
+        for entry in vocabulary:
+            vid, sid, spelling, reading, freq, meanings, pos = entry
+            if vid not in seen_vids:
+                seen_vids.add(vid)
+                result.append([spelling, reading, freq, meanings, pos, str(vid)])
+
+        return result
 
     def notes(self, note_ids) -> dict:
         url = "https://jpdb.io/api/v1/lookup-vocabulary"
@@ -335,6 +377,158 @@ class JPDB_API_VocabListWidget(aqt.QWidget):
         self.prog_bar.setValue(0)
 
         self.generation_worker = VLAPIGenerationThread(notes, current_deck)
+        self.generation_worker.generated.connect(self._on_generating)
+        self.generation_worker.finished.connect(self._on_generation_finished)
+        self.generation_worker.finished.connect(self.generation_worker.quit)
+        self.generation_worker.start()
+
+    def _on_generating(self, i):
+        self.prog_bar.setValue(i)
+
+    def _on_generation_finished(self):
+        self.can_generate = True
+        self.prog_bar.hide()
+        showInfo("Generation Finished!")
+
+
+class TextParsePreviewDialog(aqt.QDialog):
+    def __init__(self, parent: aqt.QWidget, notes: list[JPDB_Note]):
+        super().__init__(parent)
+        self.setWindowTitle("Preview cards to add")
+        self.setMinimumWidth(500)
+
+        self._layout = aqt.QVBoxLayout(self)
+
+        self._layout.addWidget(aqt.QLabel(f"{len(notes)} new card(s) will be added:"))
+
+        self.list_widget = aqt.QListWidget(self)
+        for note in notes:
+            meanings_preview = note.meanings.split("<br>")[0] if note.meanings else ""
+            self.list_widget.addItem(
+                f"{note.expression}  [{note.spelling}]  {note.part_of_speech}  —  {meanings_preview}"
+            )
+        self._layout.addWidget(self.list_widget)
+
+        buttons = aqt.QDialogButtonBox(
+            aqt.QDialogButtonBox.StandardButton.Ok | aqt.QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        self._layout.addWidget(buttons)
+
+
+class JPDB_API_TextParseWidget(aqt.QWidget):
+    def __init__(self, parent: aqt.QWidget, *, previous_query: Optional[str] = None):
+        super().__init__(parent)
+
+        self.path_to_config = Path(__file__).resolve().parent / "config" / "api.json"
+        if not self.path_to_config.exists():
+            config = {"token": ""}
+        else:
+            with self.path_to_config.open("r") as f:
+                config = json.load(f)
+
+        self.token_lineEdit = LineEditRadioButton(
+            self, config["token"], False, "Check to save API key."
+        )
+
+        self.text_edit = aqt.QPlainTextEdit(self)
+        self.text_edit.setPlaceholderText("Paste text here...")
+        self.text_edit.setFixedHeight(120)
+
+        self.file_lineEdit = aqt.QLineEdit(self)
+        self.file_lineEdit.setPlaceholderText("Or enter path to a local text file...")
+        self.browse_button = aqt.QPushButton("Browse", self)
+        file_row = aqt.QWidget(self)
+        file_row_layout = aqt.QHBoxLayout(file_row)
+        file_row_layout.setContentsMargins(0, 0, 0, 0)
+        file_row_layout.addWidget(self.file_lineEdit)
+        file_row_layout.addWidget(self.browse_button)
+
+        self.deck_label = aqt.QLabel("Select a deck", self)
+        self.select_deck_comboBox = aqt.QComboBox(self)
+
+        self.generate_button = aqt.QPushButton("Generate", self)
+
+        self.prog_bar = aqt.QProgressBar(self)
+        self.prog_bar.hide()
+
+        self.can_generate = True
+        self.decks_list = KumaAnki.decks().all_names(force_default=False)
+
+        self._layout = aqt.QFormLayout(self)
+        self._layout.addRow("Enter Token: ", self.token_lineEdit)
+        self._layout.addRow("Text: ", self.text_edit)
+        self._layout.addRow("File: ", file_row)
+        self._layout.addWidget(self.deck_label)
+        self._layout.addWidget(self.select_deck_comboBox)
+        self._layout.addWidget(self.generate_button)
+        self._layout.addWidget(self.prog_bar)
+
+        self.select_deck_comboBox.addItems(self.decks_list)
+        self.browse_button.pressed.connect(self._browse_file)
+        self.generate_button.pressed.connect(self.generate_or_update)
+
+    def _browse_file(self):
+        path, _ = aqt.QFileDialog.getOpenFileName(self, "Open text file", "", "Text files (*.txt);;All files (*)")
+        if path:
+            self.file_lineEdit.setText(path)
+
+    def _get_text(self) -> str:
+        file_path = self.file_lineEdit.text().strip()
+        if file_path:
+            try:
+                return Path(file_path).read_text(encoding="utf-8")
+            except Exception as e:
+                showInfo(f"Could not read file: {e}")
+                return ""
+        return self.text_edit.toPlainText().strip()
+
+    def generate_or_update(self) -> None:
+        if not self.can_generate:
+            return
+
+        text = self._get_text()
+        if not text:
+            showInfo("Please paste some text or select a file.")
+            return
+
+        self.can_generate = False
+
+        token = self.token_lineEdit.text()
+        if self.token_lineEdit.isChecked():
+            with self.path_to_config.open("w") as f:
+                json.dump({"token": token}, f)
+
+        current_deck = self.select_deck_comboBox.currentText()
+        api = JpdbAPI(token)
+
+        notes_raw = api.parse_text(text)
+        if not notes_raw:
+            self.can_generate = True
+            return
+
+        notes = [
+            to_jpdb_note(Note(**{k: v for (k, v) in zip(Note.__dataclass_fields__, n)}))
+            for n in notes_raw
+        ]
+        new_notes = [n for n in notes if not is_in_deck(current_deck, n.note_id)]
+
+        if not new_notes:
+            showInfo("No new cards to add.")
+            self.can_generate = True
+            return
+
+        dialog = TextParsePreviewDialog(self, new_notes)
+        if dialog.exec() != aqt.QDialog.DialogCode.Accepted:
+            self.can_generate = True
+            return
+
+        self.prog_bar.show()
+        self.prog_bar.setRange(0, len(new_notes))
+        self.prog_bar.setValue(0)
+
+        self.generation_worker = VLAPIGenerationThread(new_notes, current_deck)
         self.generation_worker.generated.connect(self._on_generating)
         self.generation_worker.finished.connect(self._on_generation_finished)
         self.generation_worker.finished.connect(self.generation_worker.quit)
