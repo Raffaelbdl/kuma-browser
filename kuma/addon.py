@@ -10,7 +10,7 @@ from .anki import KumaAnki
 from .widget import Anki_SearchWidget
 from .widget import JPDB_SearchWidget
 from .widget import JPDB_VocabListWidget
-from .jpdb_api import JPDB_API_VocabListWidget
+from .jpdb_api import JPDB_API_VocabListWidget, JPDB_API_TextParseWidget
 from .widget import RepositionWidget
 
 
@@ -48,6 +48,11 @@ class KumaBrowser_Main(aqt.QWidget):
             tool_bar,
             "JPDB API VocabList",
             JPDB_API_VocabListWidget(self),
+        )
+        self.add_action(
+            tool_bar,
+            "JPDB Text Parse",
+            JPDB_API_TextParseWidget(self),
         )
 
         self.show_hide(0)
